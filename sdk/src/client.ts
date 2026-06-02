@@ -12,11 +12,13 @@ import {
 
 import type {
   ClaimDefaultParams,
+  ContractStats,
   FundInvoiceParams,
   ILNSdkConfig,
   Invoice,
   InvoiceStatus,
   MarkPaidParams,
+  ReputationProfile,
   RpcServerLike,
   SubmitInvoiceParams,
   TransactionSigner,
@@ -110,6 +112,20 @@ export class ILNSdk {
     const preparedTransaction = await this.prepareTransaction(transaction);
 
     await this.signAndSend(preparedTransaction, params.funder);
+  }
+
+  async getStats(): Promise<ContractStats> {
+    const transaction = this.buildReadTransaction("get_contract_stats", []);
+    const simulation = await this.server.simulateTransaction(transaction);
+    return this.extractStatsResult(simulation);
+  }
+
+  async getReputation(address: string): Promise<ReputationProfile> {
+    const transaction = this.buildReadTransaction("get_reputation", [
+      this.toAddress(address),
+    ]);
+    const simulation = await this.server.simulateTransaction(transaction);
+    return this.extractReputationResult(simulation);
   }
 
   async getInvoice(invoiceId: bigint): Promise<Invoice> {
@@ -255,6 +271,46 @@ export class ILNSdk {
         nativeInvoice.funded_at == null && nativeInvoice.fundedAt == null
           ? null
           : this.toNumberValue(nativeInvoice.funded_at ?? nativeInvoice.fundedAt, "fundedAt"),
+    };
+  }
+
+  private extractStatsResult(simulation: unknown): ContractStats {
+    const result = this.extractSimulationRetval(simulation, "get_contract_stats");
+    const raw = this.unwrapContractResult(
+      scValToNative(result),
+      "get_contract_stats",
+    ) as Record<string, unknown>;
+    return {
+      totalInvoices: this.toNumberValue(
+        raw.total_invoices ?? raw.totalInvoices ?? 0,
+        "totalInvoices",
+      ),
+      totalFunded: this.toNumberValue(
+        raw.total_funded ?? raw.totalFunded ?? 0,
+        "totalFunded",
+      ),
+      totalPaid: this.toNumberValue(
+        raw.total_paid ?? raw.totalPaid ?? 0,
+        "totalPaid",
+      ),
+    };
+  }
+
+  private extractReputationResult(simulation: unknown): ReputationProfile {
+    const result = this.extractSimulationRetval(simulation, "get_reputation");
+    const raw = this.unwrapContractResult(
+      scValToNative(result),
+      "get_reputation",
+    ) as Record<string, unknown>;
+    return {
+      payerScore: this.toNumberValue(
+        raw.payer_score ?? raw.payerScore ?? 0,
+        "payerScore",
+      ),
+      lpScore: this.toNumberValue(
+        raw.lp_score ?? raw.lpScore ?? 0,
+        "lpScore",
+      ),
     };
   }
 

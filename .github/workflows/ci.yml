@@ -271,3 +271,33 @@ jobs:
               repo: context.repo.repo,
               body: '🚨 **SDK types are out of sync!** Run `pnpm generate:types` and commit the changes.'
             })
+
+  sdk-integration-testnet:
+    name: SDK integration tests (testnet)
+    # Run only on pushes to main — not on every PR to avoid burning testnet quota.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run SDK testnet integration tests
+        # Tests self-skip gracefully when secrets are absent or Horizon is unreachable,
+        # so this step never fails CI unexpectedly.
+        run: pnpm --filter @invoice-liquidity/sdk test:integration-testnet
+        env:
+          FREELANCER_SECRET: ${{ secrets.TESTNET_FREELANCER_SECRET }}
+          PAYER_SECRET: ${{ secrets.TESTNET_PAYER_SECRET }}
+          FUNDER_SECRET: ${{ secrets.TESTNET_FUNDER_SECRET }}

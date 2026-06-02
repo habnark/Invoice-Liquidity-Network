@@ -26,6 +26,7 @@
     "prepare": "husky install",
     "test": "vitest run",
     "test:integration": "vitest run tests/integration.test.ts",
+    "test:integration-testnet": "vitest run tests/integration/testnet.test.ts",
     "test:e2e-local": "vitest run __tests__/e2e/*.test.ts",
     "test:coverage": "vitest run --coverage",
     "check": "tsc --noEmit"

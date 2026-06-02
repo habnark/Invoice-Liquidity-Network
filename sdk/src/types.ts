@@ -68,3 +68,14 @@ export interface NetworkConfig {
   rpcUrl: string;
   networkPassphrase: string;
 }
+
+export interface ContractStats {
+  totalInvoices: number;
+  totalFunded: number;
+  totalPaid: number;
+}
+
+export interface ReputationProfile {
+  payerScore: number;
+  lpScore: number;
+}
